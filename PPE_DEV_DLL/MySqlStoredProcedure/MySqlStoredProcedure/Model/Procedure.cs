@@ -16,7 +16,6 @@ namespace MySqlStoredProcedure.Model
 
         #endregion
 
-
         #region CONSTRUCTEURS
 
         /// <summary>
@@ -65,7 +64,7 @@ namespace MySqlStoredProcedure.Model
 
             foreach (string para in param)
             {
-                Console.WriteLine(para);
+                Parameters.Add(this.buildParameter(para));
             }
 
             return Parameters;
@@ -80,31 +79,34 @@ namespace MySqlStoredProcedure.Model
             int i = 0;
             foreach (string arg in decompose)
             {
+                Console.WriteLine(arg);
                 if (arg=="IN" | arg=="OUT" | arg == "INOUT")
                 {
                     parameter.Direction = this.getParameterDirection(arg);
+                    i++;
                     continue;
                 }
-                if (i==0)
+                else
                 {
                     parameter.ParameterName = arg;
-                    i++;
                     continue;
                 }
                 if (i == 2)
                 {
                     string[] typeDecompose = arg.Split(new char[] { '(', ')' });
-                    for(int j=0; j < typeDecompose.Length; j++)
+                    int k = 0;
+                    foreach (string typeArg in typeDecompose)
                     {
-                        if (j == 0)
+                        if (k == 0)
                         {
-
+                            parameter.MySqlDbType = this.getDbTypeByString(typeDecompose[k]);
+                            k++;
                         }
                         else
                         {
-
+                            parameter.Size = int.Parse(typeDecompose[k]);
                         }
-                    }  
+                    }
                 }
 
             }
@@ -135,22 +137,51 @@ namespace MySqlStoredProcedure.Model
         {
             switch (type.ToUpper())
             {
-                case ("VARCHAR"):
-                    return MySqlDbType.VarChar;
 
-                case ("INT"):
-                    return MySqlDbType.Int16;
+                // String Types
+                case ("CHAR"): return MySqlDbType.VarChar;
+                case ("VARCHAR"): return MySqlDbType.VarChar;
+                case ("BINARY"): return MySqlDbType.Binary;
+                case ("VARBINARY"): return MySqlDbType.VarBinary;
+                case ("BLOB"):  return MySqlDbType.Blob;
+                case ("TEXT"):  return MySqlDbType.Text;
+                case ("ENUM"):  return MySqlDbType.Enum;
+                case ("SET"):  return MySqlDbType.Set;
 
-                case ("SMALLINT"):
-                    return MySqlDbType.Int16;
+                // Numeric Types
+                case ("TINYINT"):  return MySqlDbType.Byte;
+                case ("SMALLINT"):  return  MySqlDbType.Int16;
+                case ("MEDIUMINT"): return MySqlDbType.Int24;
+                case ("INTEGER"): return MySqlDbType.Int32;
+                case ("INT"): return MySqlDbType.Int32;
+                case ("BIGINT"): return MySqlDbType.Int64;
+                case ("DECIMAL"):  return MySqlDbType.Decimal;
 
-                case ("DECIMAL"):
-                    return MySqlDbType.Int16;
+                // Time Types
+                case ("DATE"): return MySqlDbType.Date;
+                case ("TIME"):  return MySqlDbType.Time;
+                case ("DATETIME"):  return MySqlDbType.DateTime;
+                case ("TIMESTAMP"):  return MySqlDbType.Timestamp;
+                case ("YEAR"):  return MySqlDbType.Year;
 
-                case ("DATE"):
-                    return MySqlDbType.Int16;
+                // JSON Type
+                case ("JSON"): return MySqlDbType.JSON;
             }
-            return MySqlDbType.Int16;
+            return MySqlDbType.Binary;
+        }
+
+        public override string ToString()
+        {
+            string aRetourner = "";
+            aRetourner += this.specific_name;
+            aRetourner += "\nParamètres : ";
+            foreach (MySqlParameter parameter in this.param_list)
+            {
+                aRetourner += "\n\t" + parameter.Direction + " " + parameter.ParameterName;
+                    //+ " " + parameter.MySqlDbType.ToString() + "(" + parameter.Size +")"; 
+            }
+
+            return aRetourner;
         }
 
         #endregion

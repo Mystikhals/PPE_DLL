@@ -16,9 +16,10 @@ namespace MySqlStoredProcedure.Data
     {
         #region ATTRIBUTS
 
-        private MySqlConnection connect;    // Objet CONNEXION
-        private MySqlCommand command;       // Objet COMMANDE
-        private MySqlDataReader dataReader; // Objet READER
+        private MySqlConnection connect;          // Objet CONNEXION
+        private MySqlCommand command;             // Objet COMMANDE
+        private MySqlDataReader dataReader;       // Objet READER
+        // private List<Procedure> storedProcedures; // Liste des procédure de la table courante
 
         #endregion
 
@@ -158,44 +159,6 @@ namespace MySqlStoredProcedure.Data
             }
 
             return lesProcedures;
-        }
-
-
-        /// <summary>
-        /// Vérifie l'existence d'une table sur la base de données courante.
-        /// </summary>
-        /// <param name="name">Nom de la table à vérifier.</param>
-        /// <returns>grgerg</returns>
-        private bool existTable(string name)
-        {
-            try
-            {
-                // Ouverture d'une connexion à la base de données
-                this.connect.Open();
-                string req = string.Format("SHOW TABLES FROM {0}", this.connect.Database);
-                this.command = new MySqlCommand(req, this.connect);
-                this.dataReader = this.command.ExecuteReader();
-
-                while (dataReader.Read())
-                {
-                    string columnName = string.Format("Tables_in_{0}", this.connect.Database);
-                    if (name.Equals(dataReader[columnName]))
-                    {
-                        return true;
-                    }
-                }
-
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-            }
-            finally
-            {
-                if (connect != null)
-                    connect.Close();
-            }
-            return false;
         }
 
         #endregion
