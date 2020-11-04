@@ -13,12 +13,12 @@ namespace MySqlSP
     {
         static void Main(string[] args)
         {
-            MySqlProcedure mssp = new MySqlProcedure("localhost", "root", "compagnie");
+            MySqlProcedureExecutor mssp = new MySqlProcedureExecutor("localhost", "root", "mabd");
 
             List<MySqlParameter> parametres = new List<MySqlParameter>();
             MySqlParameter para = new MySqlParameter("@pcomp", MySqlDbType.VarChar, 4);
             para.Value = "AF";
-            //parametres.Add(para);
+            parametres.Add(para);
 
             mssp.executeProcedure("ComptePilotes", parametres);
             mssp.getProcedures();

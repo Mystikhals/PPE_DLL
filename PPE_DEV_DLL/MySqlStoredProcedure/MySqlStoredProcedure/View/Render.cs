@@ -12,7 +12,7 @@ namespace MySqlStoredProcedure.View
         public void afficher()
         {
 
-            MySqlProcedure msp = new MySqlProcedure("compagnie");
+            MySqlProcedureExecutor msp = new MySqlProcedureExecutor("compagnie");
         }
 
     }

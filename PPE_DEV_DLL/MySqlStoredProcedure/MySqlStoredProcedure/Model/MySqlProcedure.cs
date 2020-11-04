@@ -7,10 +7,12 @@ using System.Threading.Tasks;
 //Lien vers la dll MySQL
 using MySql.Data.MySqlClient;
 using System.Data;
+using MySqlStoredProcedure.Model;
+using Microsoft.Win32.SafeHandles;
 
 namespace MySqlStoredProcedure.Data
 {
-    class MySqlProcedure
+    class MySqlProcedureExecutor
     {
         #region ATTRIBUTS
 
@@ -26,7 +28,7 @@ namespace MySqlStoredProcedure.Data
         /// Création d'une connexion à un serveur de base données "localhost" avec l'utilisateur "root" par défaut.
         /// </summary>
         /// <param name="database">Nom de la base de données à utiliser sur le serveur courant</param>
-        public MySqlProcedure(string database)
+        public MySqlProcedureExecutor(string database)
         {
             try
             {
@@ -50,7 +52,7 @@ namespace MySqlStoredProcedure.Data
         /// <param name="server">Adresse du serveur de base de données</param>
         /// <param name="userId">Nom d'utilisateur pour l'accès au serveur de base de données</param>
         /// <param name="database">Nom de la base de données à utiliser sur le serveur courant</param>
-        public MySqlProcedure(string server, string userId, string database)
+        public MySqlProcedureExecutor(string server, string userId, string database)
         {
             try
             {
@@ -70,13 +72,13 @@ namespace MySqlStoredProcedure.Data
         #endregion
 
         #region METHODES
-        
+
         /// <summary>
         /// Permet l'exécution d'une procédure stockée sur la base de données courante.
         /// </summary>
-        /// <param name="PSName">Nom de la procédure stockée</param>
+        /// <param name="procedureName">Nom de la procédure stockée</param>
         /// <param name="Parameters">Liste des paramètres necessaires à l'appel de la procédure stockée</param>
-        public void executeProcedure(string PSName, List<MySqlParameter> Parameters)
+        public void executeProcedure(string procedureName, List<MySqlParameter> parameters)
         {
             try
             {
@@ -84,19 +86,23 @@ namespace MySqlStoredProcedure.Data
                 this.connect.Open();
 
                 // Création et Execution de la requête
-                this.command = new MySqlCommand(PSName, this.connect);
+                this.command = new MySqlCommand(procedureName, this.connect);
                 this.command.CommandType = CommandType.StoredProcedure;
 
-                foreach (MySqlParameter parameter in Parameters)
+                foreach (MySqlParameter parameter in parameters)
                 {
                     this.command.Parameters.Add(parameter);
                 }
 
                 this.dataReader = this.command.ExecuteReader();
+                int nbCol = dataReader.FieldCount;
 
                 while (dataReader.Read())
                 {
-                    Console.WriteLine(dataReader.GetValue(0));
+                    for(int i = 0; i < nbCol; i++)
+                    {
+                        Console.WriteLine(dataReader[i]);
+                    }
                 }
 
             }
@@ -117,43 +123,26 @@ namespace MySqlStoredProcedure.Data
         /// Permet la récupération de plusieurs procédures de la base de données courante.
         /// </summary>
         /// <returns></returns>
-        public Dictionary<string, List<MySqlParameter>> getProcedures()
+        public List<Procedure> getProcedures()
         {
-            Dictionary<string, List<MySqlParameter>> lesProcedures = new Dictionary<string, List<MySqlParameter>>();
+            List<Procedure> lesProcedures = new List<Procedure>();
 
             try
             {
-                // Ouverture d'une connexion à la base de données
-                connect.Open();
+                connect.Open(); // Ouverture de la connexion
 
                 // 1 - Création et Execution de la requête pour la récupération des procédures
-                string selectProcedure = "SELECT * FROM information_schema.routines WHERE routine_type = 'PROCEDURE'";
-                this.command = new MySqlCommand(selectProcedure, this.connect);
+                string selectProcedure = string.Format(
+                    "SELECT * FROM mysql.proc WHERE type = 'PROCEDURE' AND db = '{0}'",
+                    this.connect.Database.ToString()
+                );
+
+                this.command = new MySqlCommand(selectProcedure, this.connect); // 
                 this.dataReader = this.command.ExecuteReader();
 
                 while (dataReader.Read())
                 {
-                    lesProcedures.Add(dataReader["SPECIFIC_NAME"].ToString(), new List<MySqlParameter>());
-                }
-
-                this.dataReader.Close();
-
-                // 2 - Création et Execution de la requête pour la récupération des paramètres de chaque procédure
-                string selectParameters = "SELECT * FROM information_schema.parameters";
-                this.command = new MySqlCommand(selectParameters, this.connect);
-                this.dataReader = this.command.ExecuteReader();
-
-                while (dataReader.Read())
-                {
-                    foreach (KeyValuePair<string, List<MySqlParameter>> couple in lesProcedures)
-                    {
-                        if (dataReader["SPECIFIC_NAME"].Equals(couple.Key))
-                        {
-                            MySqlParameter parameter = new MySqlParameter();
-                            parameter.ParameterName = dataReader["PARAMETER_NAME"].ToString();
-                            couple.Value.Add()
-                        }
-                    }
+                    lesProcedures.Add(new Procedure((string)dataReader["specific_name"], (Byte[])dataReader["param_list"]));
                 }
 
                 this.dataReader.Close();
@@ -207,33 +196,6 @@ namespace MySqlStoredProcedure.Data
                     connect.Close();
             }
             return false;
-        }
-
-        private MySqlDbType getDbTypeByString(string type)
-        {
-            switch (type)
-            {
-                case ("varchar"):
-                    return MySqlDbType.VarChar;
-
-                case ("int"):
-                    return MySqlDbType.Int16;
-            }
-            return MySqlDbType.Int16;
-        }
-
-        private ParameterDirection getParameterDirectionByString(string direction)
-        {
-            switch (direction)
-            {
-                case ("IN"):
-                    return ParameterDirection.Input;
-                case ("OUT"):
-                    return ParameterDirection.Output;
-                case ("INOUT"):
-                    return ParameterDirection.InputOutput;
-            }
-            return ParameterDirection.Input;
         }
 
         #endregion
