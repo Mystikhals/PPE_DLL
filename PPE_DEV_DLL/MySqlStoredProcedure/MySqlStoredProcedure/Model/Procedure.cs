@@ -61,39 +61,52 @@ namespace MySqlStoredProcedure.Model
             
             string stringParameters = System.Text.Encoding.UTF8.GetString(source);
             string[] param = stringParameters.Split(new char[] {','});
-
             foreach (string para in param)
             {
-                Parameters.Add(this.buildParameter(para));
+                if (para.Length != 0)
+                {
+                    Parameters.Add(this.buildParameter(para));
+                }
             }
 
             return Parameters;
         }
 
+        /// <summary>
+        /// Contruit un objet <see cref="MySqlParameter"/> à partir d'un objet <see cref="string"/> 
+        /// de la forme <code>[IN | OUT | INOUT] [Nom du paramètre]([Taille])</code>
+        /// </summary>
+        /// <param name="stringParameter"></param>
+        /// <returns></returns>
         private MySqlParameter buildParameter(string stringParameter)
         {
-            MySqlParameter parameter = new MySqlParameter();
+            MySqlParameter parameter = new MySqlParameter(); // Le paramètre à retourner
 
-            string[] decompose = stringParameter.Split(new char[] {' '});
+            List<string> decompose = new List<string>(stringParameter.Split(new char[] {' '})); // On décompe le paramètre en mots clefs
+
+            // Anti caractère espace
+            if (decompose.Count == 4)
+            {
+                decompose.RemoveAt(0);
+            }
 
             int i = 0;
-            foreach (string arg in decompose)
+            foreach (string keyWord in decompose)
             {
-                Console.WriteLine(arg);
-                if (arg=="IN" | arg=="OUT" | arg == "INOUT")
+                if (keyWord == "IN" | keyWord == "OUT" | keyWord == "INOUT")
                 {
-                    parameter.Direction = this.getParameterDirection(arg);
+                    parameter.Direction = this.getParameterDirection(keyWord);
+                    continue;
+                }
+                if (i == 0)
+                {
+                    parameter.ParameterName = keyWord;
                     i++;
                     continue;
                 }
-                else
+                if (i == 1)
                 {
-                    parameter.ParameterName = arg;
-                    continue;
-                }
-                if (i == 2)
-                {
-                    string[] typeDecompose = arg.Split(new char[] { '(', ')' });
+                    string[] typeDecompose = keyWord.Split(new char[] { '(', ')' });
                     int k = 0;
                     foreach (string typeArg in typeDecompose)
                     {
@@ -104,16 +117,24 @@ namespace MySqlStoredProcedure.Model
                         }
                         else
                         {
-                            parameter.Size = int.Parse(typeDecompose[k]);
+                            if (int.Parse(typeDecompose[k]) != 0)
+                                parameter.Size = int.Parse(typeDecompose[k]);
+                            break;
                         }
                     }
+                    i++;
                 }
-
             }
 
             return parameter;
         }
 
+
+        /// <summary>
+        /// Retourne un objet <see cref="ParameterDirection"/> à partir d'un <see cref="string"/> 
+        /// </summary>
+        /// <param name="direction">Direction du paramètre en <see cref="string"/></param>
+        /// <returns></returns>
         private ParameterDirection getParameterDirection(string direction)
         {
             switch (direction)
@@ -177,8 +198,10 @@ namespace MySqlStoredProcedure.Model
             aRetourner += "\nParamètres : ";
             foreach (MySqlParameter parameter in this.param_list)
             {
-                aRetourner += "\n\t" + parameter.Direction + " " + parameter.ParameterName;
-                    //+ " " + parameter.MySqlDbType.ToString() + "(" + parameter.Size +")"; 
+                if (parameter.Size != 0)
+                    aRetourner += "\n\t" + parameter.Direction + " " + parameter.ParameterName + " " + parameter.MySqlDbType.ToString() + "(" + parameter.Size + ")";
+                else
+                    aRetourner += "\n\t" + parameter.Direction + " " + parameter.ParameterName + " " + parameter.MySqlDbType.ToString();
             }
 
             return aRetourner;

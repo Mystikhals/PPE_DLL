@@ -14,7 +14,7 @@ namespace MySqlSP
     {
         static void Main(string[] args)
         {
-            MySqlProcedureExecutor mssp = new MySqlProcedureExecutor("localhost", "root", "compagnie");
+            MySqlProcedureExecutor mssp = new MySqlProcedureExecutor("localhost", "root", "sio");
 
             List<MySqlParameter> parametres = new List<MySqlParameter>();
             MySqlParameter para = new MySqlParameter("@pcomp", MySqlDbType.VarChar, 4);

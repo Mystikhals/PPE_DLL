@@ -19,7 +19,7 @@ namespace MySqlStoredProcedure.Data
         private MySqlConnection connect;          // Objet CONNEXION
         private MySqlCommand command;             // Objet COMMANDE
         private MySqlDataReader dataReader;       // Objet READER
-        // private List<Procedure> storedProcedures; // Liste des procédure de la table courante
+        private List<Procedure> storedProcedures; // Liste des procédure de la table courante
 
         #endregion
 
@@ -126,7 +126,7 @@ namespace MySqlStoredProcedure.Data
         /// <returns></returns>
         public List<Procedure> getProcedures()
         {
-            List<Procedure> lesProcedures = new List<Procedure>();
+            List<Procedure> allProcedures = new List<Procedure>(); // Les procédures à retrouver
 
             try
             {
@@ -138,12 +138,12 @@ namespace MySqlStoredProcedure.Data
                     this.connect.Database.ToString()
                 );
 
-                this.command = new MySqlCommand(selectProcedure, this.connect); // 
+                this.command = new MySqlCommand(selectProcedure, this.connect);
                 this.dataReader = this.command.ExecuteReader();
 
                 while (dataReader.Read())
                 {
-                    lesProcedures.Add(new Procedure((string)dataReader["specific_name"], (Byte[])dataReader["param_list"]));
+                    allProcedures.Add(new Procedure((string)dataReader["specific_name"], (Byte[])dataReader["param_list"]));
                 }
 
                 this.dataReader.Close();
@@ -158,7 +158,7 @@ namespace MySqlStoredProcedure.Data
                     connect.Close();
             }
 
-            return lesProcedures;
+            return allProcedures;
         }
 
         #endregion
